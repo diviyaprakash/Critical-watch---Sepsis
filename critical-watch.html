@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Critical Watch · Sepsis early warning</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef2f4;--panel:#fff;--ink:#12263a;--mut:#5a6b7b;--line:#d5dde3;--crit:#b3202e;--high:#d9542b;--watch:#b87a00;--low:#2f7d6d;--acc:#1f5f8b;--soft:#f5f8fa;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a23;--panel:#16232f;--ink:#e6eef4;--mut:#93a4b3;--line:#263746;--crit:#ff6b77;--high:#ff8a5b;--watch:#f0b429;--low:#5bc0a8;--acc:#6db3e0;--soft:#1b2b39;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1a23;--panel:#16232f;--ink:#e6eef4;--mut:#93a4b3;--line:#263746;--crit:#ff6b77;--high:#ff8a5b;--watch:#f0b429;--low:#5bc0a8;--acc:#6db3e0;--soft:#1b2b39;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 Figtree,system-ui,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 16px 40px}
+header{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:flex-end;justify-content:space-between;padding-bottom:16px}
+h1{font:700 clamp(32px,5vw,52px)/1 Fraunces,Georgia,serif;margin:0;letter-spacing:-.02em}
+h2{font:700 20px/1.2 Fraunces,Georgia,serif;margin:0 0 10px}
+.sub{color:var(--mut);margin:6px 0 0;max-width:52ch}
+.ctrls{display:flex;flex-wrap:wrap;gap:8px}
+.btn{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-weight:500}
+.btn:hover{border-color:var(--acc)}
+.btn.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.btn.danger{border-color:var(--crit);color:var(--crit)}
+.notice{background:var(--soft);border:1px solid var(--line);border-left:4px solid var(--watch);padding:8px 12px;border-radius:4px;color:var(--mut);font-size:13px;margin-bottom:16px}
+.bar{display:flex;height:34px;border-radius:6px;overflow:hidden;border:1px solid var(--line);margin-bottom:6px}
+.bar div{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:13px;transition:flex-grow .5s}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--mut);margin-bottom:18px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}
+.list{padding:8px}
+.row{display:grid;grid-template-columns:44px 1fr 84px;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 8px;border-radius:0}
+.row:last-child{border-bottom:0}
+.row[aria-pressed=true]{background:var(--soft);box-shadow:inset 3px 0 0 var(--acc)}
+.score{font:700 24px/1 Fraunces,serif;text-align:right}
+.rk{font-size:12px;font-weight:600}
+.bed{font-weight:600}
+.dx{font-size:12.5px;color:var(--mut)}
+.head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:8px}
+.big{font:700 clamp(44px,7vw,68px)/1 Fraunces,serif}
+.pill{display:inline-block;color:#fff;border-radius:4px;padding:2px 9px;font-weight:600;font-size:13px}
+.vit{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:14px 0}
+.v{border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--soft)}
+.v.bad{border-color:var(--high);box-shadow:inset 0 0 0 1px var(--high)}
+.v b{font:700 22px/1.1 Fraunces,serif}
+.v small{color:var(--mut)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media(max-width:760px){.two{grid-template-columns:1fr}}
+.drv{display:grid;grid-template-columns:130px 1fr 40px;gap:8px;align-items:center;font-size:13px;margin:6px 0}
+.trk{height:10px;background:var(--soft);border-radius:5px;overflow:hidden}
+.trk i{display:block;height:100%}
+.chk{display:flex;gap:8px;align-items:flex-start;margin:7px 0;font-size:14px}
+.chk input{margin-top:4px;accent-color:var(--acc)}
+.tags span{display:inline-block;border:1px solid var(--line);border-radius:4px;padding:1px 8px;margin:0 6px 6px 0;font-size:13px}
+.feed{list-style:none;margin:0;padding:0;max-height:260px;overflow:auto}
+.feed li{padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.feed time{color:var(--mut);margin-right:8px;font-variant-numeric:tabular-nums}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+th{font-weight:600}
+.pipe{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0;padding:0;list-style:none;font-size:13px}
+.pipe li{background:var(--soft);border:1px solid var(--line);padding:3px 9px;border-radius:4px}
+.pipe li+li::before{content:"›";margin-right:8px;color:var(--mut)}
+.scroll{overflow-x:auto}
+svg text{fill:var(--mut);font:11px Figtree,sans-serif}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+ <div>
+  <h1>Critical Watch</h1>
+  <p class="sub">Sepsis early warning for a 12-bed medical ward. Risk is re-scored every hour from vitals and labs, so deterioration shows up before the bedside team would spot it.</p>
+ </div>
+ <div class="ctrls" role="group" aria-label="Simulation controls">
+  <button class="btn" id="adv">Advance 1 hour</button>
+  <button class="btn" id="play" aria-pressed="false">Play live</button>
+  <button class="btn danger" id="inj">Simulate sepsis in this patient</button>
+  <button class="btn" id="neu">Generate new ward</button>
+ </div>
+</header>
+<div class="notice">All patients, vitals and model figures here are synthetic and generated in your browser. This is a design prototype, not a medical device. Do not use it for clinical decisions.</div>
+
+<div class="bar" id="bar" role="img" aria-label="Ward risk distribution"></div>
+<div class="legend" id="legend"></div>
+
+<div class="grid">
+ <section class="card list" aria-label="Patients ranked by sepsis risk"><div id="list"></div></section>
+ <section id="detail" aria-live="polite"></section>
+</div>
+
+<div class="two" style="margin-top:16px">
+ <section class="card"><h2>Alert feed</h2><ul class="feed" id="feed"></ul></section>
+ <section class="card">
+  <h2>How the model works</h2>
+  <ul class="pipe"><li>EHR feed (HL7/FHIR)</li><li>Hourly features</li><li>Risk model</li><li>Tiered alert</li><li>Hour-1 bundle</li><li>Audit log</li></ul>
+  <p style="font-size:14px;color:var(--mut)">This demo uses a transparent logistic score over heart rate, respiratory rate, temperature, blood pressure, SpO₂, lactate, white cell count and age. Each patient’s drivers are the terms that moved their score most. Replace it with your validated model.</p>
+  <div class="scroll"><table><caption style="text-align:left;color:var(--mut);font-size:13px;padding-bottom:4px">Illustrative validation targets. Replace with your own results.</caption>
+  <tr><th>Measure</th><th>Target</th></tr>
+  <tr><td>AUROC, onset within 6 h</td><td>≥ 0.85</td></tr>
+  <tr><td>Sensitivity at High tier</td><td>≥ 80%</td></tr>
+  <tr><td>Alerts per 100 patient-days</td><td>≤ 12</td></tr>
+  <tr><td>Median lead time before onset</td><td>≥ 4 h</td></tr></table></div>
+ </section>
+</div>
+</div>
+
+<script>
+(function(){
+const V=[
+ {k:'hr',n:'Heart rate',u:'bpm',lo:50,hi:100,d:0},
+ {k:'rr',n:'Resp. rate',u:'/min',lo:10,hi:22,d:0},
+ {k:'temp',n:'Temperature',u:'°C',lo:36,hi:38,d:1},
+ {k:'sbp',n:'Systolic BP',u:'mmHg',lo:100,hi:180,d:0},
+ {k:'spo2',n:'SpO₂',u:'%',lo:94,hi:100,d:0},
+ {k:'lact',n:'Lactate',u:'mmol/L',lo:0,hi:2,d:1},
+ {k:'wbc',n:'WBC',u:'×10⁹/L',lo:4,hi:12,d:1}];
+const DL={hr:42,rr:11,temp:1.9,sbp:-34,spo2:-6,lact:3,wbc:9},NZ={hr:3,rr:1,temp:.12,sbp:4,spo2:.6,lact:.1,wbc:.4};
+const TIERS=[{n:'Low',c:'var(--low)',max:20},{n:'Watch',c:'var(--watch)',max:50},{n:'High',c:'var(--high)',max:75},{n:'Critical',c:'var(--crit)',max:101}];
+const DX=['Pneumonia','Urinary tract infection','Post-op abdominal surgery','Cellulitis','COPD exacerbation','Heart failure','Pancreatitis','Diabetic foot ulcer','Hip fracture repair','Cholecystitis','Kidney stones','Neutropenia'];
+const BUNDLE=['Measure lactate (repeat if above 2)','Draw blood cultures before antibiotics','Give broad-spectrum antibiotics','Give 30 mL/kg fluids if hypotensive or lactate 4+','Start vasopressors if MAP stays below 65 after fluids'];
+const $=s=>document.querySelector(s),cl=x=>Math.max(-.8,Math.min(4,x)),clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let seed=11,R,P=[],sel=0,playing=false,timer=null,feed=[],T=23;
+const clock=t=>String(((t+7)%24+24)%24).padStart(2,'0')+':00';
+const tier=r=>TIERS.findIndex(x=>r<x.max);
+function score(v,age){
+ const t=[['Heart rate',.5*cl((v.hr-80)/20),v.hr+' bpm'],['Resp. rate',.7*cl((v.rr-16)/5),v.rr+'/min'],
+ ['Temperature',.45*cl(Math.abs(v.temp-37)/.8-.4),v.temp.toFixed(1)+' °C'],['Systolic BP',.6*cl((110-v.sbp)/20),v.sbp+' mmHg'],
+ ['SpO₂',.4*cl((95-v.spo2)/3),v.spo2+'%'],['Lactate',.9*cl(v.lact-1.2),v.lact.toFixed(1)+' mmol/L'],
+ ['WBC',.3*cl(Math.abs(v.wbc-8)/5-.3),v.wbc.toFixed(1)],['Age',.2*cl((age-60)/20),age+' y']];
+ const z=-3+t.reduce((s,x)=>s+x[1],0);
+ return{r:100/(1+Math.exp(-z)),t};
+}
+function vit(p,t){
+ const ramp=clamp((t-p.onset)/8,0,1.4)*p.sev,v={};
+ V.forEach(x=>{let val=p.base[x.k]+DL[x.k]*ramp+(R()-.5)*2*NZ[x.k];
+  if(x.k==='spo2')val=Math.min(100,val);if(x.k==='lact')val=Math.max(.4,val);
+  v[x.k]=x.d?Math.round(val*10)/10:Math.round(val)});
+ return v;
+}
+function push(p,t){const v=vit(p,t);p.h.push({v,r:score(v,p.age).r})}
+function gen(){
+ R=rng(seed);P=[];feed=[];T=23;
+ const sevs=[1,1,.55,.55,.5,0,0,0,0,0,0,0].sort(()=>R()-.5);
+ for(let i=0;i<12;i++){
+  const p={id:i,bed:'Bed '+String(i+1).padStart(2,'0'),age:Math.round(34+R()*54),sex:R()<.5?'F':'M',dx:DX[Math.floor(R()*DX.length)],
+   sev:sevs[i],onset:6+Math.floor(R()*14),chk:{},
+   base:{hr:70+R()*20,rr:14+R()*3,temp:36.6+R()*.5,sbp:112+R()*28,spo2:96+R()*3,lact:.8+R()*.6,wbc:6+R()*3},h:[]};
+  for(let t=0;t<=T;t++)push(p,t);
+  P.push(p);
+ }
+ P.forEach(p=>{for(let t=1;t<p.h.length;t++)if(tier(p.h[t].r)>tier(p.h[t-1].r))feed.push({t,m:p.bed+' moved to '+TIERS[tier(p.h[t].r)].n,r:p.h[t].r})});
+ feed.sort((a,b)=>b.t-a.t);feed=feed.slice(0,10);
+ sel=P.slice().sort((a,b)=>cur(b)-cur(a))[0].id;
+}
+const cur=p=>p.h[p.h.length-1].r;
+function tick(){
+ T++;
+ P.forEach(p=>{const before=tier(cur(p));push(p,T);const a=tier(cur(p));
+  if(a>before)feed.unshift({t:T,m:p.bed+' moved to '+TIERS[a].n,r:cur(p)});});
+ feed=feed.slice(0,14);render();
+}
+function spark(a,w,h,c){const lo=0,hi=100,s=a.map((r,i)=>(i*w/(a.length-1)).toFixed(1)+','+(h-(r-lo)/(hi-lo)*h).toFixed(1));
+ return`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${s.join(' ')}" fill="none" stroke="${c}" stroke-width="1.8"/></svg>`}
+function sparkRaw(a,w,h,c){const lo=Math.min(...a),hi=Math.max(...a),sp=(hi-lo)||1;
+ return`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${a.map((r,i)=>(i*w/(a.length-1)).toFixed(1)+','+(h-2-(r-lo)/sp*(h-4)).toFixed(1)).join(' ')}" fill="none" stroke="${c}" stroke-width="1.6"/></svg>`}
+function trace(p){
+ const W=640,H=210,L=34,B=24,n=p.h.length,vis=p.h.slice(-24),m=vis.length,x=i=>L+i*(W-L-8)/(m+5),y=r=>8+(H-B-8)*(1-r/100);
+ let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Sepsis risk over the last 24 hours with a 6 hour projection">`;
+ [[0,20,'var(--low)'],[20,50,'var(--watch)'],[50,75,'var(--high)'],[75,100,'var(--crit)']].forEach(b=>s+=`<rect x="${L}" y="${y(b[1])}" width="${W-L-8}" height="${y(b[0])-y(b[1])}" fill="${b[2]}" opacity=".10"/>`);
+ [0,20,50,75,100].forEach(g=>s+=`<line x1="${L}" x2="${W-8}" y1="${y(g)}" y2="${y(g)}" stroke="var(--line)"/><text x="${L-6}" y="${y(g)+4}" text-anchor="end">${g}</text>`);
+ const pts=vis.map((q,i)=>x(i)+','+y(q.r));
+ s+=`<polyline points="${pts.join(' ')}" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linejoin="round"/>`;
+ const k=Math.min(4,m-1),slope=(vis[m-1].r-vis[m-1-k].r)/k;
+ const pr=[0,6].map(j=>[x(m-1+j),y(clamp(vis[m-1].r+slope*j,1,99))]);
+ s+=`<polyline points="${pr.map(a=>a.join(',')).join(' ')}" fill="none" stroke="var(--crit)" stroke-width="2" stroke-dasharray="5 4"/>`;
+ s+=`<circle cx="${x(m-1)}" cy="${y(vis[m-1].r)}" r="5" fill="${TIERS[tier(vis[m-1].r)].c}" stroke="var(--panel)" stroke-width="2"/>`;
+ const t0=T-m+1;
+ [0,Math.floor(m/2),m-1].forEach(i=>s+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle">${clock(t0+i)}</text>`);
+ s+=`<text x="${x(m-1+6)}" y="${H-6}" text-anchor="middle">+6 h</text></svg>`;
+ return s;
+}
+function render(){
+ const sorted=P.slice().sort((a,b)=>cur(b)-cur(a)),cnt=[0,0,0,0];sorted.forEach(p=>cnt[tier(cur(p))]++);
+ $('#bar').innerHTML=TIERS.map((t,i)=>`<div style="background:${t.c};flex-grow:${cnt[i]};flex-basis:0">${cnt[i]||''}</div>`).join('');
+ $('#legend').innerHTML=TIERS.map((t,i)=>`<span><span class="dot" style="background:${t.c}"></span>${t.n} (${i?TIERS[i-1].max+'–'+(i<3?t.max:100):'under 20'}%)</span>`).join('')+`<span>Clock: ${clock(T)}</span>`;
+ $('#list').innerHTML=sorted.map(p=>{const r=cur(p),t=TIERS[tier(r)];
+  return`<button class="row" data-id="${p.id}" aria-pressed="${p.id===sel}"><div class="score" style="color:${t.c}">${Math.round(r)}</div><div><div class="bed">${p.bed}</div><div class="dx">${p.age} ${p.sex} · ${p.dx}</div><div class="rk" style="color:${t.c}">${t.n}</div></div>${spark(p.h.slice(-24).map(q=>q.r),84,32,t.c)}</button>`}).join('');
+ const p=P[sel],r=cur(p),ti=tier(r),t=TIERS[ti],sc=score(p.h[p.h.length-1].v,p.age),v=p.h[p.h.length-1].v;
+ const first=p.h.slice(-24).findIndex(q=>q.r>=50),ago=first<0?null:p.h.slice(-24).length-1-first;
+ const sirs=(v.temp>38||v.temp<36)+(v.hr>90)+(v.rr>20)+(v.wbc>12||v.wbc<4),qs=(v.rr>=22)+(v.sbp<=100);
+ const drv=sc.t.slice().sort((a,b)=>b[1]-a[1]).slice(0,5),mx=Math.max(...drv.map(d=>Math.abs(d[1])),.5);
+ const hist=p.h.slice(-24);
+ $('#detail').innerHTML=`<div class="card"><div class="head"><div><h2 style="margin:0">${p.bed} · ${p.age} ${p.sex}</h2><div class="dx">${p.dx}</div></div>
+  <div style="text-align:right"><div class="big" style="color:${t.c}">${Math.round(r)}%</div><span class="pill" style="background:${t.c}">${t.n} risk</span></div></div>
+  <div class="tags"><span>SIRS ${sirs} of 4</span><span>qSOFA ${qs} of 2 (mentation not captured)</span>${ago!==null&&ti>=2?`<span>First flagged ${ago} h ago</span>`:''}${ti>=2?'<span>Sepsis team notified</span>':''}</div>
+  ${trace(p)}
+  <div class="vit">${V.map(x=>{const val=v[x.k],bad=val<x.lo||val>x.hi;return`<div class="v${bad?' bad':''}"><small>${x.n}${bad?' (out of range)':''}</small><br><b>${x.d?val.toFixed(1):val}</b> <small>${x.u}</small><div>${sparkRaw(hist.map(q=>q.v[x.k]),110,22,bad?'var(--high)':'var(--acc)')}</div></div>`}).join('')}</div></div>
+ <div class="two"><div class="card"><h2>What is driving this score</h2>${drv.map(d=>`<div class="drv"><span>${d[0]}<br><small style="color:var(--mut)">${d[2]}</small></span><div class="trk"><i style="width:${Math.max(4,Math.abs(d[1])/mx*100)}%;background:${d[1]>0?'var(--high)':'var(--acc)'}"></i></div><span>${d[1]>0?'+':''}${d[1].toFixed(1)}</span></div>`).join('')}
+  <p class="dx">Orange bars push risk up. Blue bars pull it down.</p></div>
+ <div class="card"><h2>Hour-1 bundle</h2>${ti>=2?BUNDLE.map((b,i)=>`<label class="chk"><input type="checkbox" data-i="${i}" ${p.chk[i]?'checked':''}> <span>${b}</span></label>`).join('')+`<p class="dx">${Object.values(p.chk).filter(Boolean).length} of ${BUNDLE.length} done</p>`:'<p class="dx">The bundle opens when risk reaches the High tier (50%). Keep monitoring hourly.</p>'}</div></div>`;
+ $('#feed').innerHTML=feed.length?feed.map(f=>`<li><time>${clock(f.t)}</time>${f.m} · ${Math.round(f.r)}%</li>`).join(''):'<li>No tier changes yet. Advance the clock to generate new readings.</li>';
+}
+$('#list').addEventListener('click',e=>{const b=e.target.closest('.row');if(b){sel=+b.dataset.id;render()}});
+$('#detail').addEventListener('change',e=>{if(e.target.dataset.i!==undefined){P[sel].chk[e.target.dataset.i]=e.target.checked;render()}});
+$('#adv').onclick=tick;
+$('#inj').onclick=()=>{const p=P[sel];p.sev=1;p.onset=T;tick();tick();};
+$('#neu').onclick=()=>{seed=Math.floor(Math.random()*1e6);gen();render()};
+$('#play').onclick=function(){playing=!playing;this.setAttribute('aria-pressed',playing);this.classList.toggle('on',playing);this.textContent=playing?'Pause':'Play live';clearInterval(timer);if(playing)timer=setInterval(tick,1600)};
+gen();render();
+})();
+</script>
+</body>
+</html>
